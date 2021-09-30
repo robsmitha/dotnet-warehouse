@@ -1,0 +1,37 @@
+﻿using Core.Data;
+using Core.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Core.Extensions
+{
+    public static class WarehouseContextExtensions
+    {
+        public static async Task SeedDataAsync(this IWarehouseContext context)
+        {
+            await context.Database.EnsureCreatedAsync();
+
+            if (!await context.Dates.AnyAsync())
+            {
+                var start = DateTime.Now.AddYears(-100);
+                var end = DateTime.Now.AddYears(100);
+                var dates = Enumerable.Range(0, 1 + end.Subtract(start).Days)
+                    .Select(offset =>
+                    {
+                        var date = start.AddDays(offset);
+                        return new DimDate
+                        {
+                            Date = date,
+                            SourceKey = date.ToString("yyyy-dd-MM")
+                        };
+                    });
+                await context.Dates.AddRangeAsync(dates);
+                await context.SaveChangesAsync();
+            }
+        }
+    }
+}

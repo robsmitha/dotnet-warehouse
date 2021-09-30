@@ -11,9 +11,9 @@ namespace Core.Services
 {
     public class AuxiliaryService : IAuxiliaryService
     {
-        private readonly WarehouseDbContext _warehouseContext;
+        private readonly IWarehouseContext _warehouseContext;
 
-        public AuxiliaryService(WarehouseDbContext warehouseContext)
+        public AuxiliaryService(IWarehouseContext warehouseContext)
         {
             _warehouseContext = warehouseContext;
         }
@@ -21,7 +21,7 @@ namespace Core.Services
         public async Task<Catalog> GetCatalogAsync(string tableName)
         {
             var catalog = await _warehouseContext.Catalog
-                           .FirstOrDefaultAsync(c => string.Equals(c.TableName, tableName, StringComparison.InvariantCultureIgnoreCase));
+                           .FirstOrDefaultAsync(c => c.TableName.ToUpper() == tableName.ToUpper());
 
             if (catalog == null)
             {
@@ -31,7 +31,7 @@ namespace Core.Services
                     LoadDate = DateTime.Parse("1753-01-01"),
                     LoadType = "I"
                 };
-                await _warehouseContext.AddAsync(catalog);
+                await _warehouseContext.Catalog.AddAsync(catalog);
                 await _warehouseContext.SaveChangesAsync();
             }
             return catalog;
@@ -49,14 +49,14 @@ namespace Core.Services
                 Status = "P",
                 LastLoadDate = loadDate
             };
-            _warehouseContext.Add(lineage);
-            _warehouseContext.SaveChanges();
+            _warehouseContext.Lineage.Add(lineage);
+            await _warehouseContext.SaveChangesAsync();
 
             if (lineage.Type == "F")
             {
                 // If we're doing a full load, remove the date of the most recent load for this table and truncate
                 catalog.LoadDate = DateTime.Parse("1753-01-01");
-                _warehouseContext.SaveChanges();
+                await _warehouseContext.SaveChangesAsync();
                 _warehouseContext.Catalog.FromSqlRaw($"truncate table {tableName}");
             }
             return lineage;

@@ -9,7 +9,7 @@ namespace SqlServer.App.WarehouseData
 {
     public class DimProduct : ConformedDimension
     {
-        public override int Key { get; set; }
+        public override int Id { get; set; }
         public string Product { get; set; }
     }
 }

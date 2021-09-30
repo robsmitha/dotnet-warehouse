@@ -12,8 +12,8 @@ namespace SqlServer.App.Actions
     public class LoadProductsAction : IWarehouseAction
     {
         private readonly ApplicationDbContext _context;
-        private readonly ApplicationWarehouseDbContext _warehouseContext;
-        public LoadProductsAction(ApplicationDbContext context, ApplicationWarehouseDbContext warehouseContext)
+        private readonly ApplicationWarehouseContext _warehouseContext;
+        public LoadProductsAction(ApplicationDbContext context, ApplicationWarehouseContext warehouseContext)
         {
             _context = context;
             _warehouseContext = warehouseContext;
@@ -21,7 +21,7 @@ namespace SqlServer.App.Actions
 
         public async Task StageAsync(DateTime loadDate, DateTime lastLoadDate)
         {
-            var products = _context.Products.Where(s => s.ModifiedDate > lastLoadDate && s.ModifiedDate <= loadDate);
+            var products = await _context.Products.Where(s => s.ModifiedDate > lastLoadDate && s.ModifiedDate <= loadDate).ToListAsync();
 
             var dbName = _context.Database.GetDbConnection().Database;
             var stagingProducts = products.Select(p => new StagingProduct

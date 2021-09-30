@@ -13,10 +13,10 @@ namespace Core.Services
     public class RuntimeService : IRuntimeService
     {
         private readonly IAuxiliaryService _auxiliaryService;
-        private readonly WarehouseDbContext _warehouseContext;
+        private readonly IWarehouseContext _warehouseContext;
         public HashSet<WarehouseAction> WarehouseActions { get; set; }
 
-        public RuntimeService(WarehouseDbContext warehouseContext, IAuxiliaryService auxiliaryService)
+        public RuntimeService(IWarehouseContext warehouseContext, IAuxiliaryService auxiliaryService)
         {
             _warehouseContext = warehouseContext;
             _auxiliaryService = auxiliaryService;
@@ -71,7 +71,7 @@ namespace Core.Services
                     await warehouseAction.Action.StageAsync(now, catalog.LoadDate);
 
                     // load data
-                    await warehouseAction.Action.LoadAsync(tableName, lineage.LineageKey);
+                    await warehouseAction.Action.LoadAsync(tableName, lineage.Id);
 
                     // update lineage table to S for success
                     await _auxiliaryService.UpdateLineageAsync(lineage, "S");
@@ -91,6 +91,8 @@ namespace Core.Services
                 {
                     // update lineage table to E for Error
                     await _auxiliaryService.UpdateLineageAsync(lineage, "E");
+
+                    Console.WriteLine(e.Message);
                     throw;
                 }
             }

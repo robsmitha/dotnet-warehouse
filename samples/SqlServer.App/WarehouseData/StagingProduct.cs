@@ -8,7 +8,7 @@ namespace SqlServer.App.WarehouseData
 {
     public class StagingProduct
     {
-        public int ProductKey { get; set; }
+        public int Id { get; set; }
         public string Product { get; set; }
         public string SourceKey { get; set; }
         public DateTime? ModifiedDate { get; set; }

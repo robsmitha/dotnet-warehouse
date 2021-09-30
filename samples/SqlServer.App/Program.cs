@@ -22,18 +22,17 @@ namespace SqlServer.App
             using IServiceScope serviceScope = host.Services.CreateScope();
             IServiceProvider provider = serviceScope.ServiceProvider;
 
-            var logger = provider.GetRequiredService<ILogger>();
+            var logger = provider.GetRequiredService<ILogger<Program>>();
             var context = provider.GetRequiredService<ApplicationDbContext>();
-            var warehouseContext = provider.GetRequiredService<ApplicationWarehouseDbContext>();
+            var warehouseContext = provider.GetRequiredService<ApplicationWarehouseContext>();
             var runtime = provider.GetRequiredService<IRuntimeService>();
 
             try
             {
-                await context.SeedDataAsync();
-                await warehouseContext.SeedDataAsync();
+                runtime.RegisterWarehouseAction<DimProduct, StagingProduct>(provider.GetRequiredService<LoadProductsAction>());
+                runtime.RegisterWarehouseAction<FactSales, StagingSales>(provider.GetRequiredService<LoadSalesAction>());
 
-                runtime.RegisterWarehouseAction<StagingProduct, DimProduct>(provider.GetRequiredService<LoadProductsAction>());
-                runtime.RegisterWarehouseAction<StagingSales, FactSales>(provider.GetRequiredService<LoadSalesAction>());
+                await context.SeedDataAsync();
 
                 await runtime.Start();
             }
@@ -48,10 +47,15 @@ namespace SqlServer.App
 
         static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    logging.AddConsole();
+                })
                 .ConfigureServices((_, services) =>
                     services.AddDbContext<ApplicationDbContext>(options => 
                         options.UseSqlServer(_.Configuration.GetConnectionString("DefaultConnection")))
-                            .AddWarehouseRuntime<ApplicationWarehouseDbContext>(_.Configuration)
+                            .AddWarehouseRuntime<ApplicationWarehouseContext>(_.Configuration)
                             .AddTransient<LoadProductsAction>()
                             .AddTransient<LoadSalesAction>());
 

@@ -8,7 +8,7 @@ namespace SqlServer.App.WarehouseData
 {
     public class StagingSales
     {
-        public int SaleKey { get; set; }
+        public int Id { get; set; }
         public int ProductKey { get; set; }
         public int DateKey { get; set; }
         public decimal TotalSaleAmount { get; set; }

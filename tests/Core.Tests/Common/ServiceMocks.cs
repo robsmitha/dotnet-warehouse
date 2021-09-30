@@ -12,15 +12,15 @@ namespace Core.Tests.Common
 {
     public class ServiceMocks
     {
-        protected readonly WarehouseDbContext _warehouseContext;
+        protected readonly IWarehouseContext _warehouseContext;
         protected readonly Mock<IAuxiliaryService> _auxiliaryService;
 
-        protected WarehouseDbContext GetTestDbContextAsync(string dbName = null)
+        protected WarehouseContext GetTestDbContextAsync(string dbName = null)
         {
-            var options = new DbContextOptionsBuilder<WarehouseDbContext>()
+            var options = new DbContextOptionsBuilder<WarehouseContext>()
                 .UseInMemoryDatabase(dbName ?? "DBMemory")
                 .Options;
-            var context = new WarehouseDbContext(options);
+            var context = new WarehouseContext(options);
             //context.SeedDataAsync().GetAwaiter().GetResult();
             return context;
 

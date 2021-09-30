@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace Core.Data
 {
-    public class WarehouseDbContext : DbContext
+    public class WarehouseContext : DbContext
     {
-        public WarehouseDbContext(DbContextOptions<WarehouseDbContext> options)
+        public WarehouseContext(DbContextOptions<WarehouseContext> options)
             : base(options)
         { }
 
@@ -18,7 +18,7 @@ namespace Core.Data
         /// Making the constructor protected ensures that it will not get used by DI.
         /// </summary>
         /// <param name="options"></param>
-        protected WarehouseDbContext(DbContextOptions options)
+        protected WarehouseContext(DbContextOptions options)
             : base(options)
         {
         }

@@ -16,6 +16,6 @@ namespace Core.Models.Facts
     /// </summary>
     public abstract class Fact : Metric
     {
-        public abstract long Key { get; set; }
+        public abstract long Id { get; set; }
     }
 }

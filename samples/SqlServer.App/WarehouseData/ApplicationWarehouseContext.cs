@@ -1,6 +1,7 @@
 ﻿using Core.Data;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace SqlServer.App.WarehouseData
 {
-    public class ApplicationWarehouseDbContext : WarehouseDbContext
+    public class ApplicationWarehouseContext : WarehouseContext, IWarehouseContext
     {
-        public ApplicationWarehouseDbContext(DbContextOptions<ApplicationWarehouseDbContext> options)
+        public ApplicationWarehouseContext(DbContextOptions<ApplicationWarehouseContext> options)
             : base(options)
         { }
 

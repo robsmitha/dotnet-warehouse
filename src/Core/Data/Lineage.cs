@@ -8,7 +8,7 @@ namespace Core.Data
 {
     public class Lineage
     {
-        public int LineageKey { get; set; }
+        public int Id { get; set; }
         public string TableName { get; set; }
         public DateTime StartLoad { get; set; }
         public DateTime? FinishLoad { get; set; }

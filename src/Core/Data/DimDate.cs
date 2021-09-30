@@ -9,7 +9,8 @@ namespace Core.Data
 {
     public class DimDate : CalendarDateDimension
     {
-        public override int Key { get; set; }
+        public override int Id { get; set; }
         public string SourceKey { get; set; }
+        public DateTime Date { get; set; }
     }
 }

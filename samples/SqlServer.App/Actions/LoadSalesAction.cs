@@ -14,8 +14,8 @@ namespace SqlServer.App.Actions
     public class LoadSalesAction : IWarehouseAction
     {
         private readonly ApplicationDbContext _context;
-        private readonly ApplicationWarehouseDbContext _warehouseContext;
-        public LoadSalesAction(ApplicationDbContext context, ApplicationWarehouseDbContext warehouseContext)
+        private readonly ApplicationWarehouseContext _warehouseContext;
+        public LoadSalesAction(ApplicationDbContext context, ApplicationWarehouseContext warehouseContext)
         {
             _context = context;
             _warehouseContext = warehouseContext;
@@ -23,7 +23,7 @@ namespace SqlServer.App.Actions
 
         public async Task StageAsync(DateTime loadDate, DateTime lastLoadDate)
         {
-            var sales = _context.Sales.Where(s => s.ModifiedDate > lastLoadDate && s.ModifiedDate <= loadDate);
+            var sales = await _context.Sales.Where(s => s.ModifiedDate > lastLoadDate && s.ModifiedDate <= loadDate).ToListAsync();
             var dbName = _context.Database.GetDbConnection().Database;
             var stagingSales = sales.Select(s => new StagingSales
             {
@@ -46,13 +46,13 @@ namespace SqlServer.App.Actions
             foreach(var stagingSale in stagingSales)
             {
                 var productReference = 
-                    await _warehouseContext.DimProducts.FirstOrDefaultAsync(p => string.Equals(p.SourceKey, stagingSale.SourceProductKey, StringComparison.InvariantCultureIgnoreCase)) ??
-                    await _warehouseContext.DimProducts.FirstOrDefaultAsync(p => string.Equals(p.SourceKey, ""));
-                stagingSale.ProductKey = productReference?.Key ?? 0;
+                    await _warehouseContext.DimProducts.FirstOrDefaultAsync(p => p.SourceKey.ToUpper() == stagingSale.SourceProductKey.ToUpper()) ??
+                    await _warehouseContext.DimProducts.FirstOrDefaultAsync(p => p.SourceKey == "");
+                stagingSale.ProductKey = productReference?.Id ?? 0;
 
                 var dateReference =
-                    await _warehouseContext.Dates.FirstOrDefaultAsync(p => string.Equals(p.SourceKey, stagingSale.SourceProductKey, StringComparison.InvariantCultureIgnoreCase));
-                stagingSale.DateKey = dateReference?.Key ?? 0;
+                    await _warehouseContext.Dates.FirstOrDefaultAsync(p => p.SourceKey == stagingSale.SourceDateKey);
+                stagingSale.DateKey = dateReference?.Id ?? 0;
             }
 
             // delete duplicates
@@ -65,6 +65,10 @@ namespace SqlServer.App.Actions
             // transfer staging data to table
             await _warehouseContext.AddRangeAsync(stagingSales.Select(s => new FactSales
             {
+                ProductKey = s.ProductKey,
+                DateKey = s.DateKey,
+                TotalSaleAmount = s.TotalSaleAmount,
+                SourceSaleKey = s.SourceSaleKey,
                 LineageKey = lineageKey
             }));
 
