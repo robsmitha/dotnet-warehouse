@@ -1,4 +1,5 @@
 ﻿using Core.Data;
+using Core.Extensions;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -12,7 +13,7 @@ namespace Core.Tests.Common
 {
     public class ServiceMocks
     {
-        protected readonly IWarehouseContext _warehouseContext;
+        protected readonly WarehouseContext _warehouseContext;
         protected readonly Mock<IAuxiliaryService> _auxiliaryService;
 
         protected WarehouseContext GetTestDbContextAsync(string dbName = null)
@@ -21,7 +22,7 @@ namespace Core.Tests.Common
                 .UseInMemoryDatabase(dbName ?? "DBMemory")
                 .Options;
             var context = new WarehouseContext(options);
-            //context.SeedDataAsync().GetAwaiter().GetResult();
+            context.SeedTestDataAsync().GetAwaiter().GetResult();
             return context;
 
         }

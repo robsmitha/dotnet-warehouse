@@ -11,9 +11,9 @@ namespace Core.Services
 {
     public class AuxiliaryService : IAuxiliaryService
     {
-        private readonly IWarehouseContext _warehouseContext;
+        private readonly WarehouseContext _warehouseContext;
 
-        public AuxiliaryService(IWarehouseContext warehouseContext)
+        public AuxiliaryService(WarehouseContext warehouseContext)
         {
             _warehouseContext = warehouseContext;
         }

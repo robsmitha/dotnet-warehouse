@@ -12,7 +12,7 @@ namespace Core
     public static class DependencyInjection
     {
         public static IServiceCollection AddWarehouseRuntime<TContext>(this IServiceCollection services, IConfiguration configuration)
-            where TContext : WarehouseContext, IWarehouseContext
+            where TContext : WarehouseContext
         {
             var databaseProvider = configuration["DatabaseProvider"];
             
@@ -32,7 +32,7 @@ namespace Core
             }
             services.AddTransient<IAuxiliaryService, AuxiliaryService>();
             services.AddTransient<IRuntimeService, RuntimeService>();
-            services.AddTransient<IWarehouseContext, TContext>();
+            services.AddTransient<WarehouseContext, TContext>();
             var serviceProvider = services.BuildServiceProvider();
             var warehouseContext = serviceProvider.GetRequiredService<TContext>();
             warehouseContext.SeedDataAsync().GetAwaiter().GetResult();

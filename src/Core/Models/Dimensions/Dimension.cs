@@ -18,5 +18,6 @@ namespace Core.Models.Dimensions
     public abstract class Dimension : Metric
     {
         public abstract int Id { get; set; }
+        public abstract Dimension Default();
     }
 }

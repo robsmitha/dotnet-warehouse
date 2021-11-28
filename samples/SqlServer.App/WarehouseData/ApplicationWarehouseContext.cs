@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SqlServer.App.WarehouseData
 {
-    public class ApplicationWarehouseContext : WarehouseContext, IWarehouseContext
+    public class ApplicationWarehouseContext : WarehouseContext
     {
         public ApplicationWarehouseContext(DbContextOptions<ApplicationWarehouseContext> options)
             : base(options)

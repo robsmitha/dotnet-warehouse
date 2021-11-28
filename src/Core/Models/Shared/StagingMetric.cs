@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.Interfaces
+namespace Core.Models.Shared
 {
-    public interface IWarehouseAction
+    public abstract class StagingMetric
     {
-        Task StageAsync(DateTime loadDate, DateTime lastLoadDate);
+        public abstract Metric MapToMetric(int lineageKey);
     }
 }

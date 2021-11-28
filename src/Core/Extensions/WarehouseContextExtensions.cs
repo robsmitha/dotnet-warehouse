@@ -11,10 +11,21 @@ namespace Core.Extensions
 {
     public static class WarehouseContextExtensions
     {
-        public static async Task SeedDataAsync(this IWarehouseContext context)
+        public static async Task SeedDataAsync(this WarehouseContext context)
         {
             await context.Database.EnsureCreatedAsync();
+            await context.SeedDatesAsync();
+            
+        }
+        public static async Task SeedTestDataAsync(this WarehouseContext context)
+        {
+            await context.Database.EnsureCreatedAsync();
+            await context.SeedDatesAsync();
+            // TODO: Seed test scenarios from action parameter?
+        }
 
+        public static async Task SeedDatesAsync(this WarehouseContext context)
+        {
             if (!await context.Dates.AnyAsync())
             {
                 var start = DateTime.Now.AddYears(-100);

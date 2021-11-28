@@ -35,46 +35,5 @@ namespace SqlServer.App.Actions
             await _warehouseContext.AddRangeAsync(stagingProducts);
             await _warehouseContext.SaveChangesAsync();
         }
-
-        public async Task LoadAsync(string tableName, int lineageKey)
-        {
-            if (await _warehouseContext.DimProducts.AnyAsync())
-            {
-                // Handle inserting default record for situation where there is no link between fact and dimension
-                await _warehouseContext.AddAsync(new DimProduct
-                {
-                    Product = "N/A",
-                    SourceKey = "",
-                    ValidFrom = DateTime.Parse("1753-01-01"),
-                    ValidTo = DateTime.Parse("9999-12-31"),
-                    LineageKey = -1
-                });
-            }
-
-            var stagingProducts = await _warehouseContext.StagingProducts.ToListAsync();
-            if (stagingProducts.Any())
-            {
-                var stagingSourceKeys = stagingProducts.Select(s => s.SourceKey);
-
-                // update ValidTo of existing rows in staging table
-                // The rows will not be active anymore, because the staging table holds newer versions
-                foreach (var dimProduct in _warehouseContext.DimProducts.Where(p => stagingSourceKeys.Contains(p.SourceKey)))
-                {
-                    dimProduct.ValidTo = DateTime.Parse("9999-12-31");
-                }
-
-                // transfer staging data to table
-                var stagingData = _warehouseContext.StagingProducts.Select(p => new DimProduct
-                {
-                    Product = p.Product,
-                    SourceKey = p.SourceKey,
-                    ValidFrom = p.ValidFrom.Value,
-                    ValidTo = p.ValidTo.Value,
-                    LineageKey = lineageKey
-                });
-                await _warehouseContext.AddRangeAsync(stagingData);
-            }
-            await _warehouseContext.SaveChangesAsync();
-        }
     }
 }

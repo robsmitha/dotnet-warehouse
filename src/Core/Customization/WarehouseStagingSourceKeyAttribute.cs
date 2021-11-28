@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.Interfaces
+namespace Core.Customization
 {
-    public interface IWarehouseAction
+    public class WarehouseStagingSourceKeyAttribute : Attribute
     {
-        Task StageAsync(DateTime loadDate, DateTime lastLoadDate);
     }
 }
