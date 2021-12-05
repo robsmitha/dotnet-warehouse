@@ -8,8 +8,11 @@ namespace DotnetWarehouse.Customization
         public Type StagingEntity { get; set; }
         public IStagingAction Action { get; set; }
 
-        public dynamic Instance => Activator.CreateInstance(Entity);
-        public dynamic StagingInstance => Activator.CreateInstance(StagingEntity);
+        private dynamic _instance;
+        public dynamic Instance => _instance ??= Activator.CreateInstance(Entity);
+
+        private dynamic _stagingInstance;
+        public dynamic StagingInstance => _stagingInstance ??= Activator.CreateInstance(StagingEntity);
 
         public override bool Equals(object obj)
         {

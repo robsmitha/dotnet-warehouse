@@ -178,39 +178,40 @@ namespace DotnetWarehouse.Services
         {
             var entityDbSet = _warehouseContext.Set<T>();
             var stagingDbSet = _warehouseContext.Set<K>();
-            var stagingData = await stagingDbSet.ToListAsync();
-            var properties = typeof(K).GetProperties()
+
+            var sourceKeyProperties = typeof(K).GetProperties()
                 .Where(p => Attribute.IsDefined(p, typeof(WarehouseStagingForeignKeyAttribute)))
                 .Select(p => 
                 {
                     var a = (WarehouseStagingForeignKeyAttribute)p.GetCustomAttribute(typeof(WarehouseStagingForeignKeyAttribute));
                     return new
                     {
-                        SurrogateType = a.SurrogateType,
-                        SurrogateKeyName = a.SurrogateKeyName,
-                        SourceKeyName = p.Name
+                        a.SurrogateType,
+                        a.SurrogateKeyName,
+                        p.Name
                     };
                 }).ToList();
 
-            foreach(var property in properties)
+            var stagingData = await stagingDbSet.ToListAsync();
+            foreach (var sourceKey in sourceKeyProperties)
             {
-                dynamic foreignKeyInstance = Activator.CreateInstance(property.SurrogateType);
+                dynamic foreignKeyInstance = Activator.CreateInstance(sourceKey.SurrogateType);
                 switch(foreignKeyInstance)
                 {
                     case CalendarDateDimension _:
-                        await SetTransactionalFactCalendarDateDimensionAsync(foreignKeyInstance, stagingData, property.SourceKeyName, property.SurrogateKeyName);
+                        await SetTransactionalFactCalendarDateDimensionAsync(foreignKeyInstance, stagingData, sourceKey.Name, sourceKey.SurrogateKeyName);
                         break;
                     case ConformedDimension _:
-                        await SetTransactionalFactConformedDimensionAsync(foreignKeyInstance, stagingData, property.SourceKeyName, property.SurrogateKeyName);
+                        await SetTransactionalFactConformedDimensionAsync(foreignKeyInstance, stagingData, sourceKey.Name, sourceKey.SurrogateKeyName);
                         break;
                     default:
-                        // no SetTransactionalFactStagingDimensionReferenceAsync method
                         continue;
                 }
             }
 
             // Delete duplicates by source key
-            var duplicates = await entityDbSet.Where(e => stagingData.Select(s => s.SourceKey).Contains(e.SourceKey)).ToListAsync();
+            var sourceKeys = stagingData.Select(s => s.SourceKey).ToList();
+            var duplicates = await entityDbSet.Where(e => sourceKeys.Contains(e.SourceKey)).ToListAsync();
             _warehouseContext.RemoveRange(duplicates);
             await _warehouseContext.SaveChangesAsync();
 
@@ -220,17 +221,22 @@ namespace DotnetWarehouse.Services
             await _warehouseContext.SaveChangesAsync();
         }
 
-        private async Task SetTransactionalFactConformedDimensionAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
+        private async Task SetTransactionalFactConformedDimensionAsync<T, K>(T instance, List<K> stagingData, string sourceKeyPropertyName, string surrogateKeyPropertyName)
             where T : ConformedDimension
             where K : TransactionalFactStaging
         {
             var foreignKeyDbSet = _warehouseContext.Set<T>();
-            foreach (var item in updateList)
+            var cache = new Dictionary<string, T>();
+            foreach (var item in stagingData)
             {
                 // look up foreign key entity by staging foreign key value 
                 var sourceKey = _warehouseContext.Entry(item).Member(sourceKeyPropertyName).CurrentValue.ToString();
-                var foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == sourceKey)
-                    ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == "");
+                if (!cache.TryGetValue(sourceKey, out T foreignKeyEntity))
+                {
+                    foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == sourceKey)
+                        ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == "");
+                    cache.Add(sourceKey, foreignKeyEntity);
+                }
 
                 // set staging foreign key reference property with result
                 _warehouseContext.Entry(item).Member(surrogateKeyPropertyName).CurrentValue = foreignKeyEntity.Id;
@@ -238,17 +244,22 @@ namespace DotnetWarehouse.Services
             }
         }
 
-        private async Task SetTransactionalFactCalendarDateDimensionAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
+        private async Task SetTransactionalFactCalendarDateDimensionAsync<T, K>(T instance, List<K> stagingData, string sourceKeyPropertyName, string surrogateKeyPropertyName)
             where T : CalendarDateDimension
             where K : TransactionalFactStaging
         {
             var foreignKeyDbSet = _warehouseContext.Set<T>();
-            foreach (var item in updateList)
+            var cache = new Dictionary<string, T>();
+            foreach (var item in stagingData)
             {
                 // look up foreign key entity by staging foreign key value 
                 var sourceKey = _warehouseContext.Entry(item).Member(sourceKeyPropertyName).CurrentValue.ToString();
-                var foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == sourceKey)
-                    ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == DateTime.Parse("1-1-1753").ToString("MM-dd-yyyy"));
+                if (!cache.TryGetValue(sourceKey, out T foreignKeyEntity))
+                {
+                    foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == sourceKey)
+                        ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == DateTime.Parse("1-1-1753").ToString("MM-dd-yyyy"));
+                    cache.Add(sourceKey, foreignKeyEntity);
+                }
 
                 // set staging foreign key reference property with result
                 _warehouseContext.Entry(item).Member(surrogateKeyPropertyName).CurrentValue = foreignKeyEntity.Id;

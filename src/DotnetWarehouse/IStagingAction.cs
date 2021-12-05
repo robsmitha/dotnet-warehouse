@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace DotnetWarehouse.Customization
+namespace DotnetWarehouse
 {
     public interface IStagingAction
     {
