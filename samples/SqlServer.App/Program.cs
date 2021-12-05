@@ -1,15 +1,15 @@
 ﻿using SqlServer.App.Actions;
-using Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Threading.Tasks;
-using Core;
 using Microsoft.EntityFrameworkCore;
 using SqlServer.App.Data;
 using SqlServer.App.WarehouseData;
 using Microsoft.Extensions.Logging;
+using Application.Interfaces;
+using Infrastructure;
 
 namespace SqlServer.App
 {

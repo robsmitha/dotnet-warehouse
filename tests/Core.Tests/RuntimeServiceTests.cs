@@ -1,14 +1,10 @@
-﻿using Core.Customization;
-using Core.Exceptions;
-using Core.Interfaces;
-using Core.Services;
+﻿using Application.Exceptions;
+using Application.Interfaces;
 using Core.Tests.Common;
+using Domain.Common.Customization;
+using Infrastructure.Services;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Core.Tests

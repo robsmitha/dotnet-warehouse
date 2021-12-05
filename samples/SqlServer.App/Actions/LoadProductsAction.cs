@@ -1,5 +1,4 @@
-﻿using Core.Extensions;
-using Core.Interfaces;
+﻿using Domain.Common.Customization;
 using Microsoft.EntityFrameworkCore;
 using SqlServer.App.Data;
 using SqlServer.App.WarehouseData;

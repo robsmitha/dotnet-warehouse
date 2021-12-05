@@ -1,13 +1,7 @@
-﻿using Core.Data;
-using Core.Extensions;
-using Core.Interfaces;
+﻿using Application.Interfaces;
+using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core.Tests.Common
 {

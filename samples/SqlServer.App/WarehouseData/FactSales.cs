@@ -1,11 +1,6 @@
-﻿using Core.Data;
-using Core.Models.Facts;
-using System;
-using System.Collections.Generic;
+﻿using Domain.Common.Facts;
+using Domain.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SqlServer.App.WarehouseData
 {

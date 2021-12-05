@@ -1,12 +1,9 @@
-﻿using Core.Extensions;
-using Core.Interfaces;
+﻿using Domain.Common.Customization;
 using Microsoft.EntityFrameworkCore;
 using SqlServer.App.Data;
 using SqlServer.App.WarehouseData;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SqlServer.App.Actions

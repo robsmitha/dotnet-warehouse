@@ -1,13 +1,7 @@
-﻿using Core.Customization;
-using Core.Data;
-using Core.Models.Dimensions;
-using Core.Models.Facts;
-using Core.Models.Shared;
+﻿using Domain.Common.Customization;
+using Domain.Common.Facts;
+using Domain.Entities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SqlServer.App.WarehouseData
 {
