@@ -1,13 +1,12 @@
 ﻿using Application.Exceptions;
 using Application.Interfaces;
-using Core.Tests.Common;
 using Domain.Common.Customization;
 using Infrastructure.Services;
+using Infrastructure.Tests.Common;
 using Moq;
-using System;
 using Xunit;
 
-namespace Core.Tests
+namespace Infrastructure.Tests
 {
     public class RuntimeServiceTests : ServiceMocks
     {

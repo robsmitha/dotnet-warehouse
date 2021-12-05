@@ -3,7 +3,7 @@ using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
-namespace Core.Tests.Common
+namespace Infrastructure.Tests.Common
 {
     public class ServiceMocks
     {
