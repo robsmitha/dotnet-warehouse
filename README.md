@@ -16,8 +16,7 @@ A dotnet library for managing ETL processing and data warehouse management in EF
   "ConnectionStrings": {
     "DefaultConnection": "Server=localhost;Database=SqlServerApp;Trusted_Connection=True;",
     "WarehouseConnection": "Server=localhost;Database=SqlServerAppWarehouse;Trusted_Connection=True;"
-  },
-  "DatabaseProvider": "MSSQL"
+  }
 }
 ```
 4. Run the sample
