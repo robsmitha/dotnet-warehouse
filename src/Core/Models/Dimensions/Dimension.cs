@@ -15,9 +15,8 @@ namespace Core.Models.Dimensions
     /// Dimension table attributes are the primary target of constraints and grouping specifications from queries and BI applications.
     /// The descriptive labels on reports are typically dimension attribute domain values.
     /// </summary>
-    public abstract class Dimension : Metric
+    public abstract class Dimension : WarehouseEntity
     {
         public abstract int Id { get; set; }
-        public abstract Dimension Default();
     }
 }

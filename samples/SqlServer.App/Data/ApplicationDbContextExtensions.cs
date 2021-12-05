@@ -14,7 +14,7 @@ namespace SqlServer.App.Data
 
             if (!context.Products.Any())
             {
-                context.AddRange(Enumerable.Range(1,2).Select(g => new Product()
+                context.AddRange(Enumerable.Range(1,250).Select(g => new Product()
                 {
                     ProductName = $"Product {g}",
                     ModifiedDate = DateTime.Now.AddDays(-1)
@@ -23,13 +23,14 @@ namespace SqlServer.App.Data
 
                 foreach (var p in context.Products)
                 {
-                    context.Add(new Sale
+                    var saleCount = new Random().Next(1, 5);
+                    context.AddRange(Enumerable.Range(1, saleCount).Select(g => new Sale
                     {
                         ProductId = p.Id,
-                        SaleDate = DateTime.Now.AddDays(-1),
-                        ModifiedDate = DateTime.Now.AddDays(-1),
-                        TotalSaleAmount = 50M
-                    });
+                        SaleDate = DateTime.Now.AddDays(-g),
+                        ModifiedDate = DateTime.Now.AddDays(-g),
+                        TotalSaleAmount = new Random().Next(1, 100)
+                    }));
                 }
                 await context.SaveChangesAsync();
             }

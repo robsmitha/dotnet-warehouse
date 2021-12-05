@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Core.Models.Shared
 {
-    public abstract class Metric
+    public abstract class WarehouseEntity
     {
         public int LineageKey { get; set; }
     }

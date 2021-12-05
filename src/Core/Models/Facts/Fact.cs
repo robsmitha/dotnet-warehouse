@@ -14,7 +14,7 @@ namespace Core.Models.Facts
     /// In addition to numeric measures, a fact table always contains foreign keys for each of its associated dimensions, as well as optional degenerate dimension keys and date/time stamps.
     /// Fact tables are the primary target of computations and dynamic aggregations arising from queries.
     /// </summary>
-    public abstract class Fact : Metric
+    public abstract class Fact : WarehouseEntity
     {
         public abstract long Id { get; set; }
     }

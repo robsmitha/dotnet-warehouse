@@ -15,7 +15,6 @@ namespace SqlServer.App.WarehouseData
         public int ProductKey { get; set; }
         public int DateKey { get; set; }
         public decimal TotalSaleAmount { get; set; }
-        public string SourceSaleKey { get; set; }
 
         [ForeignKey("ProductKey")]
         public DimProduct DimProduct { get; set; }

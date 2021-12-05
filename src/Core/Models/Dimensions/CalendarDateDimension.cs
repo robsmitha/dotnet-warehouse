@@ -16,5 +16,6 @@ namespace Core.Models.Dimensions
     /// </summary>
     public abstract class CalendarDateDimension : Dimension
     {
+        public string SourceKey { get; set; }
     }
 }

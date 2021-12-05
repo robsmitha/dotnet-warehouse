@@ -4,12 +4,12 @@ using Core.Exceptions;
 using Core.Interfaces;
 using Core.Models.Dimensions;
 using Core.Models.Facts;
+using Core.Models.Shared;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,10 +29,44 @@ namespace Core.Services
             WarehouseActions = new HashSet<WarehouseAction>();
         }
 
+        public async Task Start(bool continueOnTableNotFound = true, bool continueOnStagingActionNotFound = true)
+        {
+            var now = DateTime.Now;
+            var warehouseActions = WarehouseActions.ToList();
+            foreach (var warehouseAction in warehouseActions)
+            {
+
+                try
+                {
+                    dynamic entityInstance = Activator.CreateInstance(warehouseAction.WarehouseEntity);
+                    dynamic stagingInstance = Activator.CreateInstance(warehouseAction.WarehouseStagingEntity);
+                    await ExtractTransformLoadAsync(entityInstance, stagingInstance, warehouseAction.Action, now);
+                }
+                catch (TableNotFoundException) when (continueOnTableNotFound)
+                {
+                    continue;
+                }
+                catch (WarehouseActionNotFoundException) when (continueOnStagingActionNotFound)
+                {
+                    continue;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    throw;
+                }
+            }
+        }
+
+        public void Stop()
+        {
+
+        }
+
         public void RegisterWarehouseAction<T, K>(IWarehouseAction warehouseAction)
         {
-            var action = new WarehouseAction 
-            { 
+            var action = new WarehouseAction
+            {
                 WarehouseEntity = typeof(T),
                 WarehouseStagingEntity = typeof(K),
                 Action = warehouseAction
@@ -46,191 +80,181 @@ namespace Core.Services
             WarehouseActions.Add(action);
         }
 
-        public async Task Start(bool continueOnTableNotFound = true, bool continueOnStagingActionNotFound = true)
+        private async Task ExtractTransformLoadAsync<T, K>(T instance, K stagingInstance, IWarehouseAction warehouseAction, DateTime startTime)
+            where T : WarehouseEntity
+            where K : WarehouseStagingEntity
         {
-            var now = DateTime.Now;
-            var warehouseActions = WarehouseActions.ToList();
-            foreach (var warehouseAction in warehouseActions)
+            var tableName = _warehouseContext.Model.FindEntityType(typeof(T)).GetSchemaQualifiedTableName();
+
+            var catalog = await _auxiliaryService.GetCatalogAsync(tableName);
+            var lineage = await _auxiliaryService.GetLineageAsync(tableName, startTime, catalog);
+
+            try
             {
-                var tableName = _warehouseContext.Model.
-                    FindEntityType(warehouseAction.WarehouseEntity)
-                    .GetSchemaQualifiedTableName();
 
-                var catalog = await _auxiliaryService.GetCatalogAsync(tableName);
-                var lineage = await _auxiliaryService.GetLineageAsync(tableName, now, catalog);
-
-                try
+                // truncate staging table
+                var stagingDbSet = _warehouseContext.Set<K>();
+                if (await stagingDbSet.AnyAsync())
                 {
-                    var dbSet = GetDbSet(_warehouseContext, warehouseAction.WarehouseEntity);
-                    var stagingDbSet = GetDbSet(_warehouseContext, warehouseAction.WarehouseStagingEntity);
-
-                    // truncate staging table
-                    var oldStagingData = (IEnumerable<dynamic>)await GetEntityFrameworkQueryableExtensionsMethod("ToListAsync", stagingDbSet, warehouseAction.WarehouseStagingEntity);
-                    _warehouseContext.RemoveRange(oldStagingData);
+                    _warehouseContext.RemoveRange(await stagingDbSet.ToListAsync());
                     await _warehouseContext.SaveChangesAsync();
-
-                    // call clients custom stage action
-                    await warehouseAction.Action.StageAsync(now, catalog.LoadDate);
-
-                    // load data
-                    if (warehouseAction.WarehouseEntity.IsSubclassOf(typeof(ConformedDimension)))
-                    {
-                        // Handle inserting default record for situation where there is no link between fact and dimension
-                        if (await GetEntityFrameworkQueryableExtensionsMethod("AnyAsync", dbSet, warehouseAction.WarehouseEntity) != true)
-                        {
-                            await _warehouseContext.AddAsync(GetDefaultEntity(warehouseAction.WarehouseEntity));
-                            await _warehouseContext.SaveChangesAsync();
-                        }
-
-                        // Get staging data
-                        var stagingData = (IEnumerable<dynamic>)await GetEntityFrameworkQueryableExtensionsMethod("ToListAsync", stagingDbSet, warehouseAction.WarehouseStagingEntity);
-
-                        // update ValidTo of existing rows in staging table
-                        // The rows will not be active anymore, because the staging table holds newer versions
-
-                        // TODO: Combine into query because this tolist will get expensive with lots of rows
-                        var currentData = (IEnumerable<dynamic>)await GetEntityFrameworkQueryableExtensionsMethod("ToListAsync", dbSet, warehouseAction.WarehouseEntity);
-
-                        // TODO: Cleanup SourceKey reference with reflection
-                        var newData = stagingData.ToDictionary(s => (string)s.SourceKey, s => s);
-
-                        var stagingSourceKeys = newData.Keys.ToList();
-                        var updateItems = currentData
-                            .Where(s => stagingSourceKeys.Contains(s.GetType().GetProperty(nameof(ConformedDimension.SourceKey)).GetValue(s, null).ToString()))
-                            .ToList();
-                        foreach (var item in updateItems)
-                        {
-                            // TODO: Cleanup ValidFrom reference with reflection
-                            item.GetType().GetProperty(nameof(ConformedDimension.ValidTo)).SetValue(item, newData[item.GetType().GetProperty(nameof(ConformedDimension.SourceKey)).GetValue(item, null).ToString()].ValidFrom);
-                        }
-
-                        // transfer staging data to table
-                        var data = stagingData.Select(d => d.MapToMetric(lineage.Id)).ToList();
-
-                        await _warehouseContext.AddRangeAsync(data);
-                        await _warehouseContext.SaveChangesAsync();
-
-                    }
-                    else if (warehouseAction.WarehouseEntity.IsSubclassOf(typeof(TransactionalFact)))
-                    {
-                        // Get staging data
-                        var stagingData = ((IEnumerable<dynamic>)await GetEntityFrameworkQueryableExtensionsMethod("ToListAsync", stagingDbSet, warehouseAction.WarehouseStagingEntity)).ToList();
-
-                        // Update surrogate keys
-                        var foreignKeyAttributes = warehouseAction.WarehouseEntity.GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(ForeignKeyAttribute)));
-                        foreach (var item in stagingData)
-                        {
-                            Type stagingType = item.GetType();
-                            var stagingForeignKeyAttributes = stagingType.GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(WarehouseStagingForeignKeyAttribute)));
-                            foreach (var foreignKey in foreignKeyAttributes)
-                            {
-                                // TODO: Need optimizations here, only do minimum necessary times
-                                var sfk = stagingForeignKeyAttributes.FirstOrDefault(a => ((WarehouseStagingForeignKeyAttribute)a.GetCustomAttribute(typeof(WarehouseStagingForeignKeyAttribute))).ReferencingType.Name == foreignKey.Name);
-                                var foreignKeyDbSet = GetDbSet(_warehouseContext, foreignKey.PropertyType);
-                                var foreignKeyData = (IEnumerable<dynamic>)await GetEntityFrameworkQueryableExtensionsMethod("ToListAsync", foreignKeyDbSet, foreignKey.PropertyType);
-                                var foreignKeyEntity = foreignKeyData.FirstOrDefault(p => p.SourceKey == sfk.GetValue(item, null)) ?? foreignKeyData.FirstOrDefault(p => p.SourceKey == "");
-                                item.GetType().GetProperty(((WarehouseStagingForeignKeyAttribute)sfk.GetCustomAttribute(typeof(WarehouseStagingForeignKeyAttribute))).Name)
-                                    .SetValue(item, foreignKeyEntity.Id, null);
-                            }
-                        }
-
-                        // Delete duplicates
-                        var currentData = (IEnumerable<dynamic>)await GetEntityFrameworkQueryableExtensionsMethod("ToListAsync", dbSet, warehouseAction.WarehouseEntity);
-                        var stagingSourceKeys = (stagingData ?? new List<dynamic>()).Select(s =>
-                        {
-                            Type t = s.GetType();
-                            var sk = t.GetProperties().FirstOrDefault(prop => Attribute.IsDefined(prop, typeof(WarehouseStagingSourceKeyAttribute)));
-                            return sk.GetValue(s, null).ToString();
-                        }).ToList();
-
-                        var duplicates = currentData
-                            .Where(s => 
-                            {
-                                Type t = s.GetType();
-                                var sk = t.GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(WarehouseStagingForeignKeyAttribute))).Select(t => t.GetValue(s, null)).FirstOrDefault();
-                                return stagingSourceKeys.Contains(sk);
-                            })
-                            .ToList();
-                        _warehouseContext.RemoveRange(duplicates);
-                        await _warehouseContext.SaveChangesAsync();
-
-                        // transfer staging data to table
-                        var data = stagingData.Select(d => d.MapToMetric(lineage.Id)).ToList();
-                        await _warehouseContext.AddRangeAsync(data);
-                        await _warehouseContext.SaveChangesAsync();
-                    }
-                    else
-                    {
-                        throw new NotImplementedException($"There is no LoadData implementation for {warehouseAction.WarehouseEntity.Name}");
-                    }
-                    // update lineage table to S for success
-                    await _auxiliaryService.UpdateLineageAsync(lineage, "S");
-
-                    await _auxiliaryService.UpdateCatalogAsync(catalog, now);
-
                 }
-                catch (TableNotFoundException) when (continueOnTableNotFound)
+
+                // call clients custom stage action
+                await warehouseAction.StageAsync(startTime, catalog.LoadDate);
+
+                if (typeof(T).IsSubclassOf(typeof(ConformedDimension)))
                 {
+                    dynamic conformedDimensionInstance = Activator.CreateInstance(instance.GetType());
+                    dynamic conformedDimensionStagingInstance = Activator.CreateInstance(stagingInstance.GetType());
+                    await LoadConformedDimensionAsync(conformedDimensionInstance, conformedDimensionStagingInstance, lineage.Id);
+                }
+                else if (typeof(T).IsSubclassOf(typeof(TransactionalFact)))
+                {
+                    dynamic transactionalFactInstance = Activator.CreateInstance(instance.GetType());
+                    dynamic transactionalFactStagingInstance = Activator.CreateInstance(stagingInstance.GetType());
+                    await LoadTransactionalFactAsync(transactionalFactInstance, transactionalFactStagingInstance, lineage.Id);
+                }
+                else
+                {
+                    throw new NotImplementedException($"There is no LoadData implementation for {typeof(T).Name}");
+                }
+
+                // update lineage table to S for success
+                await _auxiliaryService.UpdateLineageAsync(lineage, "S");
+
+                await _auxiliaryService.UpdateCatalogAsync(catalog, startTime);
+            }
+            catch (TableNotFoundException)
+            {
+                throw;
+            }
+            catch (WarehouseActionNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                // update lineage table to E for Error
+                await _auxiliaryService.UpdateLineageAsync(lineage, "E");
+                throw;
+            }
+        }
+
+        private async Task LoadConformedDimensionAsync<T, K>(T instance, K stagingInstance, int lineageId)
+            where T : ConformedDimension
+            where K : ConformedDimensionStaging
+        {
+            var entityDbSet = _warehouseContext.Set<T>();
+            var stagingDbSet = _warehouseContext.Set<K>();
+
+            if (!await entityDbSet.AnyAsync())
+            {
+                await _warehouseContext.AddAsync(instance);
+                await _warehouseContext.SaveChangesAsync();
+            }
+
+            if (!await stagingDbSet.AnyAsync())
+            {
+                return;
+            }
+
+            // update ValidTo of existing rows in staging table
+            // The rows will not be active anymore, because the staging table holds newer versions
+            var stagingSourceKeys = stagingDbSet.Select(s => s.SourceKey);
+            var matchedEntities = entityDbSet.Where(e => stagingSourceKeys.Contains(e.SourceKey));
+            if (await matchedEntities.AnyAsync())
+            {
+                var matchedSourceKeys = stagingDbSet.Select(s => s.SourceKey);
+                var stagingSourceKeyDictionary = await stagingDbSet.Where(s => matchedSourceKeys.Contains(s.SourceKey)).ToDictionaryAsync(s => s.SourceKey, s => s);
+                foreach (var invalidEntity in matchedEntities)
+                {
+                    var validEntity = stagingSourceKeyDictionary[invalidEntity.SourceKey];
+                    invalidEntity.ValidTo = validEntity.ValidFrom;
+                }
+            }
+
+            // transfer staging data to table
+            var entities = await stagingDbSet.Select(entity => entity.MapToEntity(lineageId)).ToListAsync();
+            await _warehouseContext.AddRangeAsync(entities);
+            await _warehouseContext.SaveChangesAsync();
+        }
+
+        private async Task LoadTransactionalFactAsync<T, K>(T instance, K stagingInstance, int lineageId)
+            where T : TransactionalFact
+            where K : TransactionalFactStaging
+        {
+            var entityDbSet = _warehouseContext.Set<T>();
+            var stagingDbSet = _warehouseContext.Set<K>();
+            var stagingData = await stagingDbSet.ToListAsync();
+            var stagingForeignKeyProperties = typeof(K).GetProperties()
+                .Where(p => Attribute.IsDefined(p, typeof(WarehouseStagingForeignKeyAttribute))).ToList();
+
+            foreach(var stagingForeignKeyProperty in stagingForeignKeyProperties)
+            {
+                var stagingForeignKeyAttribute = (WarehouseStagingForeignKeyAttribute)stagingForeignKeyProperty.GetCustomAttribute(typeof(WarehouseStagingForeignKeyAttribute));
+                var stagingForeignKeyReferencingType = stagingForeignKeyAttribute.ReferencingType;
+                var stagingForeignKeyName = stagingForeignKeyAttribute.Name;
+                var stagingForeignKeyReferenceProperty = typeof(K).GetProperty(stagingForeignKeyName);
+
+                dynamic foreignKeyInstance = Activator.CreateInstance(stagingForeignKeyReferencingType);
+                if (stagingForeignKeyReferencingType.IsSubclassOf(typeof(CalendarDateDimension)))
+                {
+                    await SetTransactionalFactStagingCalendarDateDimensionReferenceAsync(foreignKeyInstance, stagingData, stagingForeignKeyProperty, stagingForeignKeyReferenceProperty);
+                }
+                else if (stagingForeignKeyReferencingType.IsSubclassOf(typeof(ConformedDimension)))
+                {
+                    await SetTransactionalFactStagingConformedDimensionReferenceAsync(foreignKeyInstance, stagingData, stagingForeignKeyProperty, stagingForeignKeyReferenceProperty);
+                }
+                else
+                {
+                    // no SetTransactionalFactStagingDimensionReferenceAsync method
                     continue;
                 }
-                catch (WarehouseActionNotFoundException) when (continueOnStagingActionNotFound)
-                {
-                    continue;
-                }
-                catch (Exception e)
-                {
-                    // update lineage table to E for Error
-                    await _auxiliaryService.UpdateLineageAsync(lineage, "E");
-
-                    Console.WriteLine(e.Message);
-                    throw;
-                }
             }
+
+            // Delete duplicates by source key
+            var duplicates = await entityDbSet.Where(e => stagingData.Select(s => s.SourceKey).Contains(e.SourceKey)).ToListAsync();
+            _warehouseContext.RemoveRange(duplicates);
+            await _warehouseContext.SaveChangesAsync();
+
+            // transfer staging data to table
+            var data = stagingData.Select(d => d.MapToEntity(lineageId)).ToList();
+            await _warehouseContext.AddRangeAsync(data);
+            await _warehouseContext.SaveChangesAsync();
         }
-        public void Stop()
+
+        private async Task SetTransactionalFactStagingConformedDimensionReferenceAsync<T, K>(T instance, List<K> updateList, PropertyInfo stagingForeignKeyProperty, PropertyInfo stagingForeignKeyReferenceProperty)
+            where T : ConformedDimension
+            where K : TransactionalFactStaging
         {
-
-        }
-
-        private static object GetDbSet(WarehouseContext warehouseContext, Type entityType)
-        {
-            // TODO: Make sure we are getting correct method
-            MethodInfo methodInfo = warehouseContext.GetType()
-            .GetMethods()
-            .First(mi => mi.Name == "Set" && !mi.GetParameters().Any());
-
-            if (methodInfo == null)
+            var foreignKeyDbSet = _warehouseContext.Set<T>();
+            foreach (var item in updateList)
             {
-                throw new Exception($"Method \"Set\" not found in {nameof(warehouseContext)}.");
-            }
+                // look up foreign key entity by staging foreign key value 
+                var foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == stagingForeignKeyProperty.GetValue(item, null).ToString())
+                    ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == "");
 
-            return methodInfo.MakeGenericMethod(entityType).Invoke(warehouseContext, null);
+                // set staging foreign key reference property with result
+                stagingForeignKeyReferenceProperty.SetValue(item, foreignKeyEntity.Id);
+            }
         }
 
-        private static dynamic GetEntityFrameworkQueryableExtensionsMethod(string method, object dbSet, Type entityType)
+        private async Task SetTransactionalFactStagingCalendarDateDimensionReferenceAsync<T, K>(T instance, List<K> updateList, PropertyInfo stagingForeignKeyProperty, PropertyInfo stagingForeignKeyReferenceProperty)
+            where T : CalendarDateDimension
+            where K : TransactionalFactStaging
         {
-            // TODO: Make sure we are getting correct method
-            var methodInfo = typeof(EntityFrameworkQueryableExtensions)
-                            .GetMethods()
-                            .First(mi => mi.Name == method)
-                            .MakeGenericMethod(entityType);
-            if (methodInfo == null)
+            var foreignKeyDbSet = _warehouseContext.Set<T>();
+            foreach (var item in updateList)
             {
-                throw new Exception($"Method \"{method}\" not found in {nameof(EntityFrameworkQueryableExtensions)}.");
-            }
-            return (dynamic)methodInfo.Invoke(dbSet, new[] { dbSet, default(CancellationToken) });
-        }
+                // look up foreign key entity by staging foreign key value 
+                var sourceKey = stagingForeignKeyProperty.GetValue(item, null).ToString();
+                var foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == sourceKey)
+                    ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == DateTime.Parse("1-1-1753").ToString("MM-dd-yyyy"));
 
-        private static object GetDefaultEntity(Type entityType)
-        {
-            ConstructorInfo warehouseActionConstructor = entityType.GetConstructor(Type.EmptyTypes);
-            object warehouseActionObject = warehouseActionConstructor.Invoke(new object[] { });
-            MethodInfo defaultMethodInfo = entityType.GetMethod(nameof(Dimension.Default));
-            if(defaultMethodInfo == null)
-            {
-                throw new WarehouseConfigurationException($"{nameof(Dimension.Default)} not found for entity \"{entityType.Name}\".");
+                // set staging foreign key reference property with result
+                stagingForeignKeyReferenceProperty.SetValue(item, foreignKeyEntity.Id);
             }
-            return defaultMethodInfo.Invoke(warehouseActionObject, null);
         }
     }
 

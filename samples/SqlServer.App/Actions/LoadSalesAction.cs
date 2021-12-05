@@ -27,7 +27,7 @@ namespace SqlServer.App.Actions
             var dbName = _context.Database.GetDbConnection().Database;
             var stagingSales = sales.Select(s => new StagingSales
             {
-                SourceSaleKey = dbName.ToWarehouseKey(s.Id),
+                SourceKey = dbName.ToWarehouseKey(s.Id),
                 SourceProductKey = dbName.ToWarehouseKey(s.ProductId),
                 SourceDateKey = s.SaleDate.ToString("yyyy-dd-MM"),
                 TotalSaleAmount = s.TotalSaleAmount,

@@ -9,6 +9,6 @@
     /// </summary>
     public abstract class TransactionalFact : Fact
     {
-
+        public string SourceKey { get; set; }
     }
 }
