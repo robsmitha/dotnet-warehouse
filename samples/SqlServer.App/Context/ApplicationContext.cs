@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SqlServer.App.Models;
 
-namespace SqlServer.App.Data
+namespace SqlServer.App.Context
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options)
         { }
         public DbSet<Product> Products { get; set; }

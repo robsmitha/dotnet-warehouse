@@ -10,12 +10,6 @@ namespace DotnetWarehouse.Context
     {
         public static async Task SeedDataAsync(this WarehouseContext context)
         {
-            await context.Database.EnsureCreatedAsync();
-            await context.SeedDatesAsync();
-            
-        }
-        public static async Task SeedTestDataAsync(this WarehouseContext context)
-        {
             await context.Database.EnsureDeletedAsync();
             await context.Database.EnsureCreatedAsync();
             await context.SeedDatesAsync();

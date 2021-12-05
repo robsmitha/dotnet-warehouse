@@ -2,7 +2,7 @@
 using DotnetWarehouse.Facts;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SqlServer.App.WarehouseData
+namespace SqlServer.App.Data
 {
     public class FactSales : TransactionalFact
     {

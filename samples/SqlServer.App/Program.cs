@@ -6,9 +6,9 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SqlServer.App.Data;
-using SqlServer.App.WarehouseData;
 using Microsoft.Extensions.Logging;
 using DotnetWarehouse;
+using SqlServer.App.Context;
 
 namespace SqlServer.App
 {
@@ -22,23 +22,23 @@ namespace SqlServer.App
             IServiceProvider provider = serviceScope.ServiceProvider;
 
             var logger = provider.GetRequiredService<ILogger<Program>>();
-            var context = provider.GetRequiredService<ApplicationDbContext>();
+            var context = provider.GetRequiredService<ApplicationContext>();
             var warehouseContext = provider.GetRequiredService<ApplicationWarehouseContext>();
-            var dotnetWarehouse = provider.GetRequiredService<IDotnetWarehouse>();
+            var warehouse = provider.GetRequiredService<IWarehouseRuntime>();
 
             try
             {
-                dotnetWarehouse.Add<DimProduct, StagingProduct>(provider.GetRequiredService<LoadProductsAction>());
-                dotnetWarehouse.Add<FactSales, StagingSales>(provider.GetRequiredService<LoadSalesAction>());
+                warehouse.Add<DimProduct, StagingProduct>(provider.GetRequiredService<LoadProductsAction>());
+                warehouse.Add<FactSales, StagingSales>(provider.GetRequiredService<LoadSalesAction>());
 
                 await context.SeedDataAsync();
 
-                await dotnetWarehouse.StartAsync();
+                await warehouse.StartAsync();
             }
             catch (Exception e)
             {
                 logger.LogError(e.Message);
-                dotnetWarehouse.Stop();
+                warehouse.Stop();
                 throw;
             }
             await host.RunAsync();
@@ -52,7 +52,7 @@ namespace SqlServer.App
                     logging.AddConsole();
                 })
                 .ConfigureServices((_, services) =>
-                    services.AddDbContext<ApplicationDbContext>(options => 
+                    services.AddDbContext<ApplicationContext>(options => 
                         options.UseSqlServer(_.Configuration.GetConnectionString("DefaultConnection")))
                             .AddWarehouseRuntime<ApplicationWarehouseContext>(_.Configuration)
                             .AddTransient<LoadProductsAction>()

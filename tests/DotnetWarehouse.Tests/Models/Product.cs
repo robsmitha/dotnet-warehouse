@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SqlServer.App.Data
+namespace DotnetWarehouse.Tests.Models
 {
     public class Product
     {

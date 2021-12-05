@@ -1,7 +1,7 @@
 ﻿using DotnetWarehouse.Dimensions;
 using System;
 
-namespace SqlServer.App.WarehouseData
+namespace SqlServer.App.Data
 {
     public class DimProduct : ConformedDimension
     {

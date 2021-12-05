@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AB43
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlServer.App", "samples\SqlServer.App\SqlServer.App.csproj", "{EECB2DFE-FE5E-45DE-B6E8-5B9A477E42E5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure.Tests", "tests\Infrastructure.Tests\Infrastructure.Tests.csproj", "{86511281-442E-4C97-AB0C-9FE0C75D423A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotnetWarehouse.Tests", "tests\DotnetWarehouse.Tests\DotnetWarehouse.Tests.csproj", "{86511281-442E-4C97-AB0C-9FE0C75D423A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetWarehouse", "src\DotnetWarehouse\DotnetWarehouse.csproj", "{DFEC76EB-A505-4EF4-ACDE-C1ED0E5EBF64}"
 EndProject

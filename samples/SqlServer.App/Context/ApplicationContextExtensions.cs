@@ -1,19 +1,20 @@
-﻿using System;
+﻿using SqlServer.App.Models;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SqlServer.App.Data
+namespace SqlServer.App.Context
 {
-    public static class ApplicationDbContextExtensions
+    public static class ApplicationContextExtensions
     {
-        public static async Task SeedDataAsync(this ApplicationDbContext context)
+        public static async Task SeedDataAsync(this ApplicationContext context)
         {
             await context.Database.EnsureDeletedAsync();
             await context.Database.EnsureCreatedAsync();
 
             if (!context.Products.Any())
             {
-                context.AddRange(Enumerable.Range(1,250).Select(g => new Product()
+                context.AddRange(Enumerable.Range(1,250).Select(g => new Product
                 {
                     ProductName = $"Product {g}",
                     ModifiedDate = DateTime.Now.AddDays(-1)

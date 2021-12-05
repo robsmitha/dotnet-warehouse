@@ -1,7 +1,8 @@
 ﻿using DotnetWarehouse.Context;
+using DotnetWarehouse.Tests.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace SqlServer.App.WarehouseData
+namespace DotnetWarehouse.Tests.Context
 {
     public class ApplicationWarehouseContext : WarehouseContext
     {

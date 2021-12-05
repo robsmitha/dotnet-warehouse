@@ -1,8 +1,8 @@
 ﻿using DotnetWarehouse;
 using DotnetWarehouse.Customization;
 using Microsoft.EntityFrameworkCore;
+using SqlServer.App.Context;
 using SqlServer.App.Data;
-using SqlServer.App.WarehouseData;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,9 +11,9 @@ namespace SqlServer.App.Actions
 {
     public class LoadProductsAction : IStagingAction
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationContext _context;
         private readonly ApplicationWarehouseContext _warehouseContext;
-        public LoadProductsAction(ApplicationDbContext context, ApplicationWarehouseContext warehouseContext)
+        public LoadProductsAction(ApplicationContext context, ApplicationWarehouseContext warehouseContext)
         {
             _context = context;
             _warehouseContext = warehouseContext;

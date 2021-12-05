@@ -3,7 +3,7 @@ using DotnetWarehouse.Entities;
 using DotnetWarehouse.Facts;
 using System;
 
-namespace SqlServer.App.WarehouseData
+namespace SqlServer.App.Data
 {
     public class StagingSales : TransactionalFactStaging
     {

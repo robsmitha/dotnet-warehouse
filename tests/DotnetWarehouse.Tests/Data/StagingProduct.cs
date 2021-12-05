@@ -1,6 +1,6 @@
 ﻿using DotnetWarehouse.Dimensions;
 
-namespace SqlServer.App.WarehouseData
+namespace DotnetWarehouse.Tests.Data
 {
     public class StagingProduct : ConformedDimensionStaging
     {
