@@ -4,12 +4,12 @@ namespace DotnetWarehouse.Customization
 {
     public class WarehouseStagingForeignKeyAttribute : Attribute
     {
-        public Type ReferencingType;
-        public string Name;
+        public Type SurrogateType;
+        public string SurrogateKeyName;
         public WarehouseStagingForeignKeyAttribute(string name, Type referencingType)
         {
-            Name = name;
-            ReferencingType = referencingType;
+            SurrogateKeyName = name;
+            SurrogateType = referencingType;
         }
     }
 }

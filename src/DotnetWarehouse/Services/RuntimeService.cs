@@ -155,8 +155,10 @@ namespace DotnetWarehouse.Services
             var matchedEntities = entityDbSet.Where(e => stagingSourceKeys.Contains(e.SourceKey));
             if (await matchedEntities.AnyAsync())
             {
-                var matchedSourceKeys = stagingDbSet.Select(s => s.SourceKey);
-                var stagingSourceKeyDictionary = await stagingDbSet.Where(s => matchedSourceKeys.Contains(s.SourceKey)).ToDictionaryAsync(s => s.SourceKey, s => s);
+                var matchedSourceKeys = matchedEntities.Select(s => s.SourceKey);
+                var stagingSourceKeyDictionary = await stagingDbSet.Where(s => matchedSourceKeys.Contains(s.SourceKey))
+                    .ToDictionaryAsync(s => s.SourceKey, s => s);
+
                 foreach (var invalidEntity in matchedEntities)
                 {
                     var validEntity = stagingSourceKeyDictionary[invalidEntity.SourceKey];
@@ -177,30 +179,33 @@ namespace DotnetWarehouse.Services
             var entityDbSet = _warehouseContext.Set<T>();
             var stagingDbSet = _warehouseContext.Set<K>();
             var stagingData = await stagingDbSet.ToListAsync();
-            var stagingForeignKeyProperties = typeof(K).GetProperties()
-                .Where(p => Attribute.IsDefined(p, typeof(WarehouseStagingForeignKeyAttribute))).ToList();
+            var properties = typeof(K).GetProperties()
+                .Where(p => Attribute.IsDefined(p, typeof(WarehouseStagingForeignKeyAttribute)))
+                .Select(p => 
+                {
+                    var a = (WarehouseStagingForeignKeyAttribute)p.GetCustomAttribute(typeof(WarehouseStagingForeignKeyAttribute));
+                    return new
+                    {
+                        SurrogateType = a.SurrogateType,
+                        SurrogateKeyName = a.SurrogateKeyName,
+                        SourceKeyName = p.Name
+                    };
+                }).ToList();
 
-            foreach(var stagingForeignKeyProperty in stagingForeignKeyProperties)
+            foreach(var property in properties)
             {
-                var stagingForeignKeyAttribute = (WarehouseStagingForeignKeyAttribute)stagingForeignKeyProperty.GetCustomAttribute(typeof(WarehouseStagingForeignKeyAttribute));
-                var sourceKeyPropertyName = stagingForeignKeyProperty.Name;
-
-                var stagingForeignKeyReferencingType = stagingForeignKeyAttribute.ReferencingType;
-                var surrogateKeyPropertyName = stagingForeignKeyAttribute.Name;
-
-                dynamic foreignKeyInstance = Activator.CreateInstance(stagingForeignKeyReferencingType);
-                if (stagingForeignKeyReferencingType.IsSubclassOf(typeof(CalendarDateDimension)))
+                dynamic foreignKeyInstance = Activator.CreateInstance(property.SurrogateType);
+                switch(foreignKeyInstance)
                 {
-                    await SetTransactionalFactStagingCalendarDateDimensionReferenceAsync(foreignKeyInstance, stagingData, sourceKeyPropertyName, surrogateKeyPropertyName);
-                }
-                else if (stagingForeignKeyReferencingType.IsSubclassOf(typeof(ConformedDimension)))
-                {
-                    await SetTransactionalFactStagingConformedDimensionReferenceAsync(foreignKeyInstance, stagingData, sourceKeyPropertyName, surrogateKeyPropertyName);
-                }
-                else
-                {
-                    // no SetTransactionalFactStagingDimensionReferenceAsync method
-                    continue;
+                    case CalendarDateDimension _:
+                        await SetTransactionalFactCalendarDateDimensionAsync(foreignKeyInstance, stagingData, property.SourceKeyName, property.SurrogateKeyName);
+                        break;
+                    case ConformedDimension _:
+                        await SetTransactionalFactConformedDimensionAsync(foreignKeyInstance, stagingData, property.SourceKeyName, property.SurrogateKeyName);
+                        break;
+                    default:
+                        // no SetTransactionalFactStagingDimensionReferenceAsync method
+                        continue;
                 }
             }
 
@@ -215,7 +220,7 @@ namespace DotnetWarehouse.Services
             await _warehouseContext.SaveChangesAsync();
         }
 
-        private async Task SetTransactionalFactStagingConformedDimensionReferenceAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
+        private async Task SetTransactionalFactConformedDimensionAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
             where T : ConformedDimension
             where K : TransactionalFactStaging
         {
@@ -233,7 +238,7 @@ namespace DotnetWarehouse.Services
             }
         }
 
-        private async Task SetTransactionalFactStagingCalendarDateDimensionReferenceAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
+        private async Task SetTransactionalFactCalendarDateDimensionAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
             where T : CalendarDateDimension
             where K : TransactionalFactStaging
         {
