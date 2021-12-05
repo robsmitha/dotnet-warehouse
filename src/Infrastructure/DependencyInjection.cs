@@ -10,7 +10,7 @@ namespace Infrastructure
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddWarehouseRuntime<TContext>(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddWarehouseRuntime<TContext>(this IServiceCollection services, IConfiguration configuration, string connectionString = null)
             where TContext : WarehouseContext
         {
             var databaseProvider = configuration["DatabaseProvider"];
@@ -24,7 +24,7 @@ namespace Infrastructure
             {
                 case "MSSQL":
                     services.AddDbContext<TContext>(options =>
-                        options.UseSqlServer(configuration.GetConnectionString("WarehouseConnection")));
+                        options.UseSqlServer(connectionString ?? configuration.GetConnectionString("WarehouseConnection")));
                     break;
                 default:
                     throw new WarehouseConfigurationException($"\"{databaseProvider}\" is not a valid value for {nameof(databaseProvider)}.");
