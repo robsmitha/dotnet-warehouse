@@ -1,5 +1,5 @@
-﻿using Application.Interfaces;
-using Infrastructure.Context;
+﻿using DotnetWarehouse.Context;
+using DotnetWarehouse.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 

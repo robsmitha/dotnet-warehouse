@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SqlServer.App.Data;
 using SqlServer.App.WarehouseData;
 using Microsoft.Extensions.Logging;
-using Application.Interfaces;
-using Infrastructure;
+using DotnetWarehouse;
 
 namespace SqlServer.App
 {
@@ -25,21 +24,21 @@ namespace SqlServer.App
             var logger = provider.GetRequiredService<ILogger<Program>>();
             var context = provider.GetRequiredService<ApplicationDbContext>();
             var warehouseContext = provider.GetRequiredService<ApplicationWarehouseContext>();
-            var runtime = provider.GetRequiredService<IRuntimeService>();
+            var dotnetWarehouse = provider.GetRequiredService<IDotnetWarehouse>();
 
             try
             {
-                runtime.RegisterWarehouseAction<DimProduct, StagingProduct>(provider.GetRequiredService<LoadProductsAction>());
-                runtime.RegisterWarehouseAction<FactSales, StagingSales>(provider.GetRequiredService<LoadSalesAction>());
+                dotnetWarehouse.Add<DimProduct, StagingProduct>(provider.GetRequiredService<LoadProductsAction>());
+                dotnetWarehouse.Add<FactSales, StagingSales>(provider.GetRequiredService<LoadSalesAction>());
 
                 await context.SeedDataAsync();
 
-                await runtime.Start();
+                await dotnetWarehouse.StartAsync();
             }
             catch (Exception e)
             {
                 logger.LogError(e.Message);
-                runtime.Stop();
+                dotnetWarehouse.Stop();
                 throw;
             }
             await host.RunAsync();

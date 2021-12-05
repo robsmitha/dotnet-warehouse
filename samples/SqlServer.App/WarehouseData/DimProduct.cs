@@ -1,4 +1,4 @@
-﻿using Domain.Common.Dimensions;
+﻿using DotnetWarehouse.Dimensions;
 using System;
 
 namespace SqlServer.App.WarehouseData

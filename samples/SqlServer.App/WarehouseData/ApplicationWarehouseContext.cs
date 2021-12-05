@@ -1,4 +1,4 @@
-﻿using Infrastructure.Context;
+﻿using DotnetWarehouse.Context;
 using Microsoft.EntityFrameworkCore;
 
 namespace SqlServer.App.WarehouseData

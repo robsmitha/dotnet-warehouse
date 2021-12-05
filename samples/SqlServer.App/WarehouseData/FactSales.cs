@@ -1,5 +1,5 @@
-﻿using Domain.Common.Facts;
-using Domain.Entities;
+﻿using DotnetWarehouse.Entities;
+using DotnetWarehouse.Facts;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SqlServer.App.WarehouseData
@@ -11,10 +11,10 @@ namespace SqlServer.App.WarehouseData
         public int DateKey { get; set; }
         public decimal TotalSaleAmount { get; set; }
 
-        [ForeignKey("ProductKey")]
+        [ForeignKey(nameof(ProductKey))]
         public DimProduct DimProduct { get; set; }
 
-        [ForeignKey("DateKey")]
+        [ForeignKey(nameof(DateKey))]
         public DimDate DimDate { get; set; }
     }
 }

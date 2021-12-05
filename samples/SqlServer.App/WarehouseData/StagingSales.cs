@@ -1,6 +1,6 @@
-﻿using Domain.Common.Customization;
-using Domain.Common.Facts;
-using Domain.Entities;
+﻿using DotnetWarehouse.Customization;
+using DotnetWarehouse.Entities;
+using DotnetWarehouse.Facts;
 using System;
 
 namespace SqlServer.App.WarehouseData

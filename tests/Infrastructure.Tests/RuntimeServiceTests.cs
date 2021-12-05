@@ -1,7 +1,7 @@
-﻿using Application.Exceptions;
-using Application.Interfaces;
-using Domain.Common.Customization;
-using Infrastructure.Services;
+﻿using DotnetWarehouse.Customization;
+using DotnetWarehouse.Exceptions;
+using DotnetWarehouse.Interfaces;
+using DotnetWarehouse.Services;
 using Infrastructure.Tests.Common;
 using Moq;
 using Xunit;
@@ -19,11 +19,11 @@ namespace Infrastructure.Tests
             var runtimeService = new RuntimeService(_warehouseContext, auxiliaryMock.Object);
             var warehouseAction = new WarehouseAction
             {
-                WarehouseEntity = typeof(FactMock),
-                WarehouseStagingEntity = typeof(StagingMock),
+                Entity = typeof(FactMock),
+                StagingEntity = typeof(StagingMock),
                 Action = warehouseActionMock.Object
             };
-            runtimeService.RegisterWarehouseAction<FactMock, StagingMock>(warehouseActionMock.Object);
+            runtimeService.Add<FactMock, StagingMock>(warehouseActionMock.Object);
             Assert.Contains(runtimeService.WarehouseActions, a => a.Equals(warehouseAction));
         }
 
@@ -36,12 +36,12 @@ namespace Infrastructure.Tests
             var runtimeService = new RuntimeService(_warehouseContext, auxiliaryMock.Object);
             var warehouseAction = new WarehouseAction
             {
-                WarehouseEntity = typeof(FactMock),
-                WarehouseStagingEntity = typeof(StagingMock),
+                Entity = typeof(FactMock),
+                StagingEntity = typeof(StagingMock),
                 Action = warehouseActionMock.Object
             };
-            runtimeService.RegisterWarehouseAction<FactMock, StagingMock>(warehouseActionMock.Object);
-            Assert.Throws<DuplicateWarehouseActionException>(() => runtimeService.RegisterWarehouseAction<FactMock, StagingMock>(warehouseActionMock.Object));
+            runtimeService.Add<FactMock, StagingMock>(warehouseActionMock.Object);
+            Assert.Throws<DuplicateWarehouseActionException>(() => runtimeService.Add<FactMock, StagingMock>(warehouseActionMock.Object));
         }
     }
 }

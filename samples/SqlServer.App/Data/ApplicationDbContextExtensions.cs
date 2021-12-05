@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SqlServer.App.Data
@@ -10,7 +8,8 @@ namespace SqlServer.App.Data
     {
         public static async Task SeedDataAsync(this ApplicationDbContext context)
         {
-            context.Database.EnsureCreated();
+            await context.Database.EnsureDeletedAsync();
+            await context.Database.EnsureCreatedAsync();
 
             if (!context.Products.Any())
             {

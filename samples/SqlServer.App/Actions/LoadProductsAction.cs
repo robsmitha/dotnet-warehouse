@@ -1,4 +1,4 @@
-﻿using Domain.Common.Customization;
+﻿using DotnetWarehouse.Customization;
 using Microsoft.EntityFrameworkCore;
 using SqlServer.App.Data;
 using SqlServer.App.WarehouseData;
