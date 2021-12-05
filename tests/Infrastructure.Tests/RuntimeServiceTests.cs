@@ -14,7 +14,7 @@ namespace Infrastructure.Tests
         public void RuntimeService_RegisterStagingAction_SetsValidWarehouseAction()
         {
             var auxiliaryMock = new Mock<IAuxiliaryService>();
-            var warehouseActionMock = new Mock<IWarehouseAction>();
+            var warehouseActionMock = new Mock<IStagingAction>();
 
             var runtimeService = new RuntimeService(_warehouseContext, auxiliaryMock.Object);
             var warehouseAction = new WarehouseAction
@@ -31,7 +31,7 @@ namespace Infrastructure.Tests
         public void RuntimeService_RegisterStagingAction_DuplicateWarehouseActionThrowDuplicateWarehouseActionException()
         {
             var auxiliaryMock = new Mock<IAuxiliaryService>();
-            var warehouseActionMock = new Mock<IWarehouseAction>();
+            var warehouseActionMock = new Mock<IStagingAction>();
 
             var runtimeService = new RuntimeService(_warehouseContext, auxiliaryMock.Object);
             var warehouseAction = new WarehouseAction

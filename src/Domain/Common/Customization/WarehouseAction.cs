@@ -6,7 +6,7 @@ namespace Domain.Common.Customization
     {
         public Type WarehouseEntity { get; set; }
         public Type WarehouseStagingEntity { get; set; }
-        public IWarehouseAction Action { get; set; }
+        public IStagingAction Action { get; set; }
 
         public override bool Equals(object obj)
         {

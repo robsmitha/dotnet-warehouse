@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SqlServer.App.Actions
 {
-    public class LoadSalesAction : IWarehouseAction
+    public class LoadSalesAction : IStagingAction
     {
         private readonly ApplicationDbContext _context;
         private readonly ApplicationWarehouseContext _warehouseContext;

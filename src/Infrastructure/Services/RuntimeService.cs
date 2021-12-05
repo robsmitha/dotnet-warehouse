@@ -27,6 +27,23 @@ namespace Infrastructure.Services
             WarehouseActions = new HashSet<WarehouseAction>();
         }
 
+        public void RegisterWarehouseAction<T, K>(IStagingAction warehouseAction)
+        {
+            var action = new WarehouseAction
+            {
+                WarehouseEntity = typeof(T),
+                WarehouseStagingEntity = typeof(K),
+                Action = warehouseAction
+            };
+
+            if (WarehouseActions.Contains(action))
+            {
+                throw new DuplicateWarehouseActionException($"Duplicate warehouse action added for key: {action.WarehouseEntity.Name}");
+            }
+
+            WarehouseActions.Add(action);
+        }
+
         public async Task Start(bool continueOnTableNotFound = true, bool continueOnStagingActionNotFound = true)
         {
             var now = DateTime.Now;
@@ -61,24 +78,7 @@ namespace Infrastructure.Services
 
         }
 
-        public void RegisterWarehouseAction<T, K>(IWarehouseAction warehouseAction)
-        {
-            var action = new WarehouseAction
-            {
-                WarehouseEntity = typeof(T),
-                WarehouseStagingEntity = typeof(K),
-                Action = warehouseAction
-            };
-
-            if (WarehouseActions.Contains(action))
-            {
-                throw new DuplicateWarehouseActionException($"Duplicate warehouse action added for key: {action.WarehouseEntity.Name}");
-            }
-
-            WarehouseActions.Add(action);
-        }
-
-        private async Task ExtractTransformLoadAsync<T, K>(T instance, K stagingInstance, IWarehouseAction warehouseAction, DateTime startTime)
+        private async Task ExtractTransformLoadAsync<T, K>(T instance, K stagingInstance, IStagingAction warehouseAction, DateTime startTime)
             where T : WarehouseEntity
             where K : WarehouseStagingEntity
         {
@@ -191,18 +191,19 @@ namespace Infrastructure.Services
             foreach(var stagingForeignKeyProperty in stagingForeignKeyProperties)
             {
                 var stagingForeignKeyAttribute = (WarehouseStagingForeignKeyAttribute)stagingForeignKeyProperty.GetCustomAttribute(typeof(WarehouseStagingForeignKeyAttribute));
+                var sourceKeyPropertyName = stagingForeignKeyProperty.Name;
+
                 var stagingForeignKeyReferencingType = stagingForeignKeyAttribute.ReferencingType;
-                var stagingForeignKeyName = stagingForeignKeyAttribute.Name;
-                var stagingForeignKeyReferenceProperty = typeof(K).GetProperty(stagingForeignKeyName);
+                var surrogateKeyPropertyName = stagingForeignKeyAttribute.Name;
 
                 dynamic foreignKeyInstance = Activator.CreateInstance(stagingForeignKeyReferencingType);
                 if (stagingForeignKeyReferencingType.IsSubclassOf(typeof(CalendarDateDimension)))
                 {
-                    await SetTransactionalFactStagingCalendarDateDimensionReferenceAsync(foreignKeyInstance, stagingData, stagingForeignKeyProperty, stagingForeignKeyReferenceProperty);
+                    await SetTransactionalFactStagingCalendarDateDimensionReferenceAsync(foreignKeyInstance, stagingData, sourceKeyPropertyName, surrogateKeyPropertyName);
                 }
                 else if (stagingForeignKeyReferencingType.IsSubclassOf(typeof(ConformedDimension)))
                 {
-                    await SetTransactionalFactStagingConformedDimensionReferenceAsync(foreignKeyInstance, stagingData, stagingForeignKeyProperty, stagingForeignKeyReferenceProperty);
+                    await SetTransactionalFactStagingConformedDimensionReferenceAsync(foreignKeyInstance, stagingData, sourceKeyPropertyName, surrogateKeyPropertyName);
                 }
                 else
                 {
@@ -222,7 +223,7 @@ namespace Infrastructure.Services
             await _warehouseContext.SaveChangesAsync();
         }
 
-        private async Task SetTransactionalFactStagingConformedDimensionReferenceAsync<T, K>(T instance, List<K> updateList, PropertyInfo stagingForeignKeyProperty, PropertyInfo stagingForeignKeyReferenceProperty)
+        private async Task SetTransactionalFactStagingConformedDimensionReferenceAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
             where T : ConformedDimension
             where K : TransactionalFactStaging
         {
@@ -230,15 +231,17 @@ namespace Infrastructure.Services
             foreach (var item in updateList)
             {
                 // look up foreign key entity by staging foreign key value 
-                var foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == stagingForeignKeyProperty.GetValue(item, null).ToString())
+                var sourceKey = _warehouseContext.Entry(item).Member(sourceKeyPropertyName).CurrentValue.ToString();
+                var foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == sourceKey)
                     ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == "");
 
                 // set staging foreign key reference property with result
-                stagingForeignKeyReferenceProperty.SetValue(item, foreignKeyEntity.Id);
+                _warehouseContext.Entry(item).Member(surrogateKeyPropertyName).CurrentValue = foreignKeyEntity.Id;
+                _warehouseContext.Entry(item).State = EntityState.Modified;
             }
         }
 
-        private async Task SetTransactionalFactStagingCalendarDateDimensionReferenceAsync<T, K>(T instance, List<K> updateList, PropertyInfo stagingForeignKeyProperty, PropertyInfo stagingForeignKeyReferenceProperty)
+        private async Task SetTransactionalFactStagingCalendarDateDimensionReferenceAsync<T, K>(T instance, List<K> updateList, string sourceKeyPropertyName, string surrogateKeyPropertyName)
             where T : CalendarDateDimension
             where K : TransactionalFactStaging
         {
@@ -246,12 +249,13 @@ namespace Infrastructure.Services
             foreach (var item in updateList)
             {
                 // look up foreign key entity by staging foreign key value 
-                var sourceKey = stagingForeignKeyProperty.GetValue(item, null).ToString();
+                var sourceKey = _warehouseContext.Entry(item).Member(sourceKeyPropertyName).CurrentValue.ToString();
                 var foreignKeyEntity = await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == sourceKey)
                     ?? await foreignKeyDbSet.FirstOrDefaultAsync(p => p.SourceKey == DateTime.Parse("1-1-1753").ToString("MM-dd-yyyy"));
 
                 // set staging foreign key reference property with result
-                stagingForeignKeyReferenceProperty.SetValue(item, foreignKeyEntity.Id);
+                _warehouseContext.Entry(item).Member(surrogateKeyPropertyName).CurrentValue = foreignKeyEntity.Id;
+                _warehouseContext.Entry(item).State = EntityState.Modified;
             }
         }
     }

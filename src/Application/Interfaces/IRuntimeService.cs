@@ -12,6 +12,6 @@ namespace Application.Interfaces
         /// Register actions for staging data into associated warehouse object
         /// </summary>
         /// <param name="warehouseAction"></param>
-        void RegisterWarehouseAction<T, K>(IWarehouseAction warehouseAction);
+        void RegisterWarehouseAction<T, K>(IStagingAction warehouseAction);
     }
 }
