@@ -5,7 +5,6 @@ A dotnet library for managing ETL processing and data warehouse management in EF
 ## Tools
 - .NET Core
 - Entity Framework Core
-- FluentValiation
 - Xunit, Moq
 
 ## Running the SqlServer sample
