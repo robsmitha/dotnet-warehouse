@@ -13,6 +13,10 @@ namespace DotnetWarehouse
         /// <param name="date"></param>
         /// <returns></returns>
         Task StartAsync(DateTime? date = null);
+
+        /// <summary>
+        /// Stops warehouse runtime
+        /// </summary>
         void Stop();
 
         /// <summary>

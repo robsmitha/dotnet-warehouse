@@ -16,6 +16,8 @@ namespace DotnetWarehouse
                         options.UseSqlServer(connectionString ?? configuration.GetConnectionString("WarehouseConnection")));
 
             services.AddTransient<IAuxiliaryService, AuxiliaryService>();
+            services.AddTransient<IWarehouseProcessingService, WarehouseProcessingService>();
+            services.AddTransient<IEntityProcessingService, EntityProcessingService>();
             services.AddTransient<IWarehouseRuntime, WarehouseRuntime>();
             services.AddTransient<WarehouseContext, TContext>();
             var serviceProvider = services.BuildServiceProvider();

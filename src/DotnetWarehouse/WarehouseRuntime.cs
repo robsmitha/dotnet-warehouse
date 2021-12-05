@@ -11,14 +11,14 @@ namespace DotnetWarehouse
 {
     public class WarehouseRuntime : IWarehouseRuntime
     {
-        private readonly IAuxiliaryService _auxiliaryService;
         private readonly WarehouseContext _warehouseContext;
-        public HashSet<WarehouseAction> WarehouseActions { get; set; }
+        private readonly IWarehouseProcessingService _warehouseProcessingService;
+        private HashSet<WarehouseAction> WarehouseActions { get; set; }
 
-        public WarehouseRuntime(WarehouseContext warehouseContext, IAuxiliaryService auxiliaryService)
+        public WarehouseRuntime(WarehouseContext warehouseContext, IWarehouseProcessingService entityProcessingService)
         {
             _warehouseContext = warehouseContext;
-            _auxiliaryService = auxiliaryService;
+            _warehouseProcessingService = entityProcessingService;
             WarehouseActions = new HashSet<WarehouseAction>();
         }
 
@@ -44,7 +44,7 @@ namespace DotnetWarehouse
             {
                 try
                 {
-                    await _auxiliaryService.ExtractTransformLoadAsync(warehouseAction.Instance, warehouseAction.StagingInstance, warehouseAction.Action, date.Value);
+                    await _warehouseProcessingService.ExtractTransformLoadAsync(warehouseAction.Instance, warehouseAction.StagingInstance, warehouseAction.Action, date.Value);
                 }
                 catch (Exception e)
                 {
