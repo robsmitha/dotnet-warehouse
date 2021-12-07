@@ -2,16 +2,16 @@
 
 namespace DotnetWarehouse.Tests.Data
 {
-    public class StagingProduct : ConformedDimensionStaging
+    public class StagingConformedDimensionEntity : ConformedDimensionStaging
     {
         public int Id { get; set; }
-        public string Product { get; set; }
+        public string StringData { get; set; }
 
-        public override DimProduct MapToEntity(int lineageKey)
+        public override ConformedDimensionEntity MapToEntity(int lineageKey)
         {
-            return new DimProduct
+            return new ConformedDimensionEntity
             {
-                Product = Product,
+                StringData = StringData,
                 SourceKey = SourceKey,
                 ModifiedDate = ModifiedDate,
                 ValidFrom = ValidFrom,

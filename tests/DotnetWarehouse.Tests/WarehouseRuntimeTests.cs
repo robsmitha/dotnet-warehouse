@@ -25,8 +25,8 @@ namespace DotnetWarehouse.Tests
             using var transaction = _fixture.Connection.BeginTransaction();
             using var warehouseContext = _fixture.GetWarehouseContext(transaction);
             var runtimeService = new WarehouseRuntime(warehouseContext, WarehouseProcessingService.Object);
-            runtimeService.Add<DimProduct, StagingProduct>(StagingActionMock.Object);
-            runtimeService.Add<FactSales, StagingSales>(StagingActionMock.Object);
+            runtimeService.Add<ConformedDimensionEntity, StagingConformedDimensionEntity>(StagingActionMock.Object);
+            runtimeService.Add<TransactionalFactEntity, StagingTransactionalFactEntity>(StagingActionMock.Object);
 
             await runtimeService.StartAsync();
             WarehouseProcessingService.Verify(service => 

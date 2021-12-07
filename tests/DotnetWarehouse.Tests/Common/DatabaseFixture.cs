@@ -67,6 +67,8 @@ namespace DotnetWarehouse.Tests.Common
                 context.Database.EnsureCreated();
 
                 context.SeedDatesAsync().GetAwaiter().GetResult();
+
+                _databaseInitialized = true;
             }
         }
     }

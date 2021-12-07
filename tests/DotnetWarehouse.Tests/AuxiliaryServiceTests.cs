@@ -44,7 +44,7 @@ namespace DotnetWarehouse.Tests
 
             var tableName = Guid.NewGuid().ToString();
             var now = DateTime.Now;
-            var actual = await auxiliaryService.GetLineageAsync(new DimProduct(), tableName, now);
+            var actual = await auxiliaryService.GetLineageAsync(new ConformedDimensionEntity(), tableName, now);
             Assert.Equal(tableName, actual.TableName);
             Assert.Equal(now, actual.LastLoadDate);
             Assert.Equal("P", actual.Status);
@@ -60,7 +60,7 @@ namespace DotnetWarehouse.Tests
             var now = DateTime.Now;
             var catalog = new Catalog
             {
-                TableName = "TableName",
+                TableName = "TABLE_NAME",
                 LoadType = "I"
             };
             await auxiliaryService.UpdateCatalogAsync(catalog, now);
@@ -77,7 +77,7 @@ namespace DotnetWarehouse.Tests
             var lineage = new Lineage
             {
                 StartLoad = DateTime.Now,
-                TableName = "TableName",
+                TableName = "TABLE_NAME",
                 Type = "I",
                 Status = "P",
                 LastLoadDate = DateTime.Now

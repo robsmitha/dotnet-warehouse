@@ -48,6 +48,7 @@ namespace DotnetWarehouse.Services
                 // call clients custom stage action
                 await warehouseAction.StageAsync(startTime, catalog.LoadDate);
 
+                // load staging data into warehouse entities
                 switch (instance)
                 {
                     case ConformedDimension _:
@@ -63,6 +64,7 @@ namespace DotnetWarehouse.Services
                 // update lineage table to S for success
                 await _auxiliaryService.UpdateLineageAsync(lineage, "S");
 
+                // update load date for warehouse entity
                 await _auxiliaryService.UpdateCatalogAsync(catalog, startTime);
             }
             catch (Exception)

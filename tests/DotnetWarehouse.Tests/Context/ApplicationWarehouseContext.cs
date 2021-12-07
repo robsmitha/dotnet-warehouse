@@ -10,10 +10,10 @@ namespace DotnetWarehouse.Tests.Context
             : base(options)
         { }
 
-        public DbSet<StagingProduct> StagingProducts { get; set; }
-        public DbSet<StagingSales> StagingSales { get; set; }
+        public DbSet<StagingConformedDimensionEntity> StagingConformedDimensionEntities { get; set; }
+        public DbSet<StagingTransactionalFactEntity> StagingTransactionalFactEntities { get; set; }
 
-        public DbSet<DimProduct> DimProducts { get; set; }
-        public DbSet<FactSales> FactSales { get; set; }
+        public DbSet<ConformedDimensionEntity> ConformedDimensionEntities { get; set; }
+        public DbSet<TransactionalFactEntity> TransactionalFactEntities { get; set; }
     }
 }

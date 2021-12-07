@@ -11,6 +11,13 @@ namespace DotnetWarehouse.Dimensions
     /// </summary>
     public abstract class ConformedDimension : Dimension
     {
+        public ConformedDimension()
+        {
+            SourceKey = "";
+            ValidFrom = DateTime.Parse("1753-01-01");
+            ValidTo = DateTime.Parse("9999-12-31");
+            LineageKey = -1;
+        }
         public string SourceKey { get; set; }
         public DateTime ModifiedDate { get; set; }
         public DateTime ValidFrom { get; set; }
