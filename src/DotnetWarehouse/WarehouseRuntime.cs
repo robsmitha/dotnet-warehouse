@@ -1,6 +1,7 @@
 ﻿using DotnetWarehouse.Common;
 using DotnetWarehouse.Context;
 using DotnetWarehouse.Customization;
+using DotnetWarehouse.Dimensions;
 using DotnetWarehouse.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace DotnetWarehouse
 
         public void Add<T, K>(IStagingAction stagingAction)
             where T : WarehouseEntity
-            where K : WarehouseStagingEntity
+            where K : StagingEntity
         {
             var warehouseAction = new WarehouseAction
             {
@@ -39,7 +40,7 @@ namespace DotnetWarehouse
         public async Task StartAsync(DateTime? date = null)
         {
             date ??= DateTime.Now;
-            var warehouseActions = WarehouseActions.ToList();
+            var warehouseActions = WarehouseActions.OrderBy(a => a.Entity.IsSubclassOf(typeof(Dimension))).ToList();
             foreach (var warehouseAction in warehouseActions)
             {
                 try

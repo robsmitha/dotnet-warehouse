@@ -27,7 +27,7 @@ namespace DotnetWarehouse.Services
 
         public async Task ExtractTransformLoadAsync<T, K>(T instance, K stagingInstance, IStagingAction warehouseAction, DateTime startTime)
             where T : WarehouseEntity
-            where K : WarehouseStagingEntity
+            where K : StagingEntity
         {
             var tableName = _warehouseContext.Model.FindEntityType(typeof(T)).GetSchemaQualifiedTableName();
 

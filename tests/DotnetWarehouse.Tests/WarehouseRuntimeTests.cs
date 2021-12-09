@@ -30,7 +30,7 @@ namespace DotnetWarehouse.Tests
 
             await runtimeService.StartAsync();
             WarehouseProcessingService.Verify(service => 
-                service.ExtractTransformLoadAsync(It.IsAny<WarehouseEntity>(), It.IsAny<WarehouseStagingEntity>(), It.IsAny<IStagingAction>(), It.IsAny<DateTime>()), Times.Exactly(2));
+                service.ExtractTransformLoadAsync(It.IsAny<WarehouseEntity>(), It.IsAny<StagingEntity>(), It.IsAny<IStagingAction>(), It.IsAny<DateTime>()), Times.Exactly(2));
         }
     }
 }

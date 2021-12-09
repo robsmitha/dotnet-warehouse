@@ -8,6 +8,17 @@ namespace DotnetWarehouse.Context
 {
     public static class WarehouseContextExtensions
     {
+        public static string ToWarehouseKey<T>(this WarehouseContext context, T key)
+        {
+            var dbName = context.Database.GetDbConnection().Database;
+            return $"{dbName}|{key}";
+        }
+
+        public static string ToWarehouseSourceDateKey(this WarehouseContext context, DateTime date)
+        {
+            return date.ToString("yyyy-dd-MM");
+        }
+
         public static async Task SeedDataAsync(this WarehouseContext context)
         {
             await context.Database.EnsureDeletedAsync();
@@ -29,7 +40,7 @@ namespace DotnetWarehouse.Context
                         return new DimDate
                         {
                             Date = date,
-                            SourceKey = date.ToString("yyyy-dd-MM")
+                            SourceKey = context.ToWarehouseSourceDateKey(date)
                         };
                     });
                 await context.Dates.AddRangeAsync(dates);

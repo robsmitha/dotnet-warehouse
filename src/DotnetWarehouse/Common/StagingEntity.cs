@@ -1,6 +1,6 @@
 ﻿namespace DotnetWarehouse.Common
 {
-    public abstract class WarehouseStagingEntity
+    public abstract class StagingEntity
     {
         public abstract WarehouseEntity MapToEntity(int lineageKey);
     }

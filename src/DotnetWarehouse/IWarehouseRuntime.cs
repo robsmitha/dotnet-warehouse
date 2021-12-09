@@ -25,6 +25,6 @@ namespace DotnetWarehouse
         /// <param name="stagingAction"></param>
         void Add<T, K>(IStagingAction stagingAction)
             where T : WarehouseEntity
-            where K : WarehouseStagingEntity;
+            where K : StagingEntity;
     }
 }

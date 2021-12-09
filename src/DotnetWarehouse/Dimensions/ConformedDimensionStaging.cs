@@ -4,7 +4,7 @@ using System;
 
 namespace DotnetWarehouse.Dimensions
 {
-    public abstract class ConformedDimensionStaging : WarehouseStagingEntity
+    public abstract class ConformedDimensionStaging : StagingEntity
     {
         [WarehouseStagingSourceKey]
         public string SourceKey { get; set; }

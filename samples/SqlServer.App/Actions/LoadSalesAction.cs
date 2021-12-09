@@ -1,5 +1,5 @@
 ﻿using DotnetWarehouse;
-using DotnetWarehouse.Customization;
+using DotnetWarehouse.Context;
 using Microsoft.EntityFrameworkCore;
 using SqlServer.App.Context;
 using SqlServer.App.Data;
@@ -22,12 +22,11 @@ namespace SqlServer.App.Actions
         public async Task StageAsync(DateTime loadDate, DateTime lastLoadDate)
         {
             var sales = await _context.Sales.Where(s => s.ModifiedDate > lastLoadDate && s.ModifiedDate <= loadDate).ToListAsync();
-            var dbName = _context.Database.GetDbConnection().Database;
             var stagingSales = sales.Select(s => new StagingSales
             {
-                SourceKey = dbName.ToWarehouseKey(s.Id),
-                SourceProductKey = dbName.ToWarehouseKey(s.ProductId),
-                SourceDateKey = s.SaleDate.ToString("yyyy-dd-MM"),
+                SourceKey = _warehouseContext.ToWarehouseKey(s.Id),
+                SourceProductKey = _warehouseContext.ToWarehouseKey(s.ProductId),
+                SourceDateKey = _warehouseContext.ToWarehouseSourceDateKey(s.SaleDate),
                 TotalSaleAmount = s.TotalSaleAmount,
                 ModifiedDate = s.ModifiedDate
             });

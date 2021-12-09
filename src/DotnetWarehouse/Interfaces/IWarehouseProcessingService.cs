@@ -21,7 +21,7 @@ namespace DotnetWarehouse.Interfaces
         /// <returns></returns>
         Task ExtractTransformLoadAsync<T, K>(T instance, K stagingInstance, IStagingAction warehouseAction, DateTime startTime)
             where T : WarehouseEntity
-            where K : WarehouseStagingEntity;
+            where K : StagingEntity;
 
     }
 }
